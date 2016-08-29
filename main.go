@@ -57,7 +57,7 @@ func getLatestPost() (title string, url string) {
 	panic(errors.New("Error fetching/parsing whoishiring's posts."))
 }
 
-func getFormattedInternComments(url string) (formattedComments string) {
+func getFormattedInternComments(url string) (formattedComments string, totalBay int, totalDallas int) {
 	latestPost, err := goquery.NewDocument("https://news.ycombinator.com/" + url)
 	panicIf(err)
 
@@ -68,14 +68,22 @@ func getFormattedInternComments(url string) (formattedComments string) {
 
 		width, _ := comment.Find(".ind img").Attr("width")
 		if width == "0" {
-			text := ansiEscapeRegex.ReplaceAllString(comment.Text(), "")
+			text := ansiEscapeRegex.ReplaceAllStringFunc(comment.Text(), func(match string) string {
+				if match == "\n" {
+					return match
+				}
+				return ""
+			})
+
 			if internRegex.MatchString(text) {
 				var formatComment func(string, ...interface{}) string
 
 				switch {
 				case bayRegex.MatchString(text):
+					totalBay++
 					formatComment = bayCommentColor
 				case dallasRegex.MatchString(text):
+					totalDallas++
 					formatComment = dallasCommentColor
 				default:
 					formatComment = regularCommentColor
@@ -94,13 +102,15 @@ func getFormattedInternComments(url string) (formattedComments string) {
 }
 
 func main() {
-	var paginatedString string
 	pager := os.Getenv("PAGER")
 
 	title, url := getLatestPost()
-	paginatedString += postTitleColor("%s", title) + "\n"
-	paginatedString += bayCommentColor("Bay Area Comments") + ", " + dallasCommentColor("Dallas Area Comments") + "\n"
-	paginatedString += getFormattedInternComments(url)
+	postTitle := postTitleColor("%s", title) + "\n"
+
+	formattedComments, totalBay, totalDallas := getFormattedInternComments(url)
+	postPrefix := bayCommentColor("Bay Area Comments (%d)", totalBay) + ", " + dallasCommentColor("Dallas Area Comments (%d)", totalDallas) + "\n"
+
+	paginatedString := postTitle + postPrefix + formattedComments
 
 	displayPaginatedString(paginatedString, pager)
 }
