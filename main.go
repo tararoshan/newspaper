@@ -57,6 +57,16 @@ func getLatestPost() (title string, url string) {
 	panic(errors.New("Error fetching/parsing whoishiring's posts."))
 }
 
+func colorMultiLineText(text string, formatComment func(string, ...interface{}) string) string {
+	stringArray := strings.Split(text, "\n")
+
+	for i, _ := range stringArray {
+		stringArray[i] = formatComment("%s", stringArray[i])
+	}
+
+	return strings.Join(stringArray, "\n")
+}
+
 func getFormattedInternComments(url string) (formattedComments string, totalBay int, totalDallas int) {
 	latestPost, err := goquery.NewDocument("https://news.ycombinator.com/" + url)
 	panicIf(err)
@@ -93,8 +103,7 @@ func getFormattedInternComments(url string) (formattedComments string, totalBay 
 				formattedComments += "\n" // adding newlines to a template string with bgcolor makes it look bad
 				formattedComments += commentTitleColor("Intern Comment No. %d", totalComments)
 				formattedComments += "\n"
-				formattedComments += formatComment("%s", text)
-				formattedComments += "\n"
+				formattedComments += colorMultiLineText(text, formatComment)
 			}
 		}
 	}
