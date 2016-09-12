@@ -78,22 +78,28 @@ func getFormattedInternComments(url string) (formattedComments string, totalBay 
 
 		width, _ := comment.Find(".ind img").Attr("width")
 		if width == "0" {
-			text := ansiEscapeRegex.ReplaceAllStringFunc(comment.Text(), func(match string) string {
-				if match == "\n" {
-					return match
-				}
-				return ""
-			})
+			innerP := comment.Find(".default > .comment > span > p")
+			rawText := comment.Find(".default > .comment > span").Eq(0).Text()
+
+			firstLine := rawText[:strings.Index(rawText, innerP.Eq(0).Text())]
+
+			text := firstLine + "\n\n"
+			for j := 0; j < innerP.Length(); j++ {
+				text += innerP.Eq(j).Text() + "\n\n"
+			}
 
 			if internRegex.MatchString(text) {
+				var optionalLocation string
 				var formatComment func(string, ...interface{}) string
 
 				switch {
 				case bayRegex.MatchString(text):
 					totalBay++
+					optionalLocation = " (BAY AREA)"
 					formatComment = bayCommentColor
 				case dallasRegex.MatchString(text):
 					totalDallas++
+					optionalLocation = " (DFW AREA)"
 					formatComment = dallasCommentColor
 				default:
 					formatComment = regularCommentColor
@@ -101,7 +107,7 @@ func getFormattedInternComments(url string) (formattedComments string, totalBay 
 
 				totalComments++
 				formattedComments += "\n" // adding newlines to a template string with bgcolor makes it look bad
-				formattedComments += commentTitleColor("Intern Comment No. %d", totalComments)
+				formattedComments += commentTitleColor("Intern Comment No. %d%s", totalComments, optionalLocation)
 				formattedComments += "\n"
 				formattedComments += colorMultiLineText(text, formatComment)
 			}
