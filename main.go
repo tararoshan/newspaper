@@ -32,7 +32,7 @@ func panicIf(err error) {
 }
 
 func displayPaginatedString(paginatedString string, pager string) {
-	cmd := exec.Command(pager)
+	cmd := exec.Command(pager, "-R")
 	cmd.Stdin = strings.NewReader(paginatedString)
 	cmd.Stdout = os.Stdout
 
