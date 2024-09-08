@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"regexp"
@@ -41,9 +42,19 @@ func displayPaginatedString(paginatedString string, pager string) {
 }
 
 func getLatestPost() (title string, url string) {
-	whoishiring, err := goquery.NewDocument("https://news.ycombinator.com/submitted?id=whoishiring")
+	res, err := http.Get("https://news.ycombinator.com/submitted?id=whoishiring")
 	panicIf(err)
 
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		fmt.Printf("status code error: %d %s", res.StatusCode, res.Status)
+	}
+
+	// Load the HTML document
+	whoishiring, err := goquery.NewDocumentFromReader(res.Body)
+	panicIf(err)
+
+	// Get the third td (data) element from each tr (row)
 	posts := whoishiring.Find("tr > td:nth-child(3)")
 	for i := 0; i < posts.Length(); i++ {
 		post := posts.Eq(i)
