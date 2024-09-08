@@ -41,18 +41,24 @@ func displayPaginatedString(paginatedString string, pager string) {
 	panicIf(err)
 }
 
-func getLatestPost() (title string, url string) {
-	res, err := http.Get("https://news.ycombinator.com/submitted?id=whoishiring")
+func loadDocument(url string) goquery.Document {
+	res, err := http.Get(url)
 	panicIf(err)
 
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		fmt.Printf("status code error: %d %s", res.StatusCode, res.Status)
+		fmt.Printf("status code error for url %s: %d %s", url, res.StatusCode, res.Status)
 	}
 
 	// Load the HTML document
-	whoishiring, err := goquery.NewDocumentFromReader(res.Body)
+	doc, err := goquery.NewDocumentFromReader(res.Body)
 	panicIf(err)
+
+	return *doc
+}
+
+func getLatestPost() (title string, url string) {
+	whoishiring := loadDocument("https://news.ycombinator.com/submitted?id=whoishiring")
 
 	// Get the third td (data) element from each tr (row)
 	posts := whoishiring.Find("tr > td:nth-child(3)")
@@ -79,8 +85,7 @@ func colorMultiLineText(text string, formatComment func(string, ...interface{}) 
 }
 
 func getFormattedInternComments(url string) (formattedComments string, totalBay int, totalDallas int) {
-	latestPost, err := goquery.NewDocument("https://news.ycombinator.com/" + url)
-	panicIf(err)
+	latestPost := loadDocument("https://news.ycombinator.com/" + url)
 
 	totalComments := 0
 	comments := latestPost.Find("table .comtr > td > table > tbody > tr")
