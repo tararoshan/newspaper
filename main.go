@@ -14,10 +14,9 @@ import (
 )
 
 var (
-	internRegex     = regexp.MustCompile(`(?i)[^\w](?:interns?|internship)[^\w]`)
-	ansiEscapeRegex = regexp.MustCompile(`[[:cntrl:]]`)
-	bayRegex        = regexp.MustCompile(`(?i)[^\w](?:san fran\w*|sf|bay area|mountain view|oakland|berkeley)[^\w]`)
-	dallasRegex     = regexp.MustCompile(`(?i)[^\w](?:dallas|dfw|fort worth|richardson)[^\w]`)
+	internRegex = regexp.MustCompile(`(?i)\b(interns?|internship)\b`)
+	bayRegex    = regexp.MustCompile(`(?i)[^\w](?:san fran\w*|sf|bay area|mountain view|oakland|berkeley)[^\w]`)
+	dallasRegex = regexp.MustCompile(`(?i)[^\w](?:dallas|dfw|fort worth|richardson)[^\w]`)
 
 	postTitleColor      = color.New(color.BgGreen).Add(color.Bold).SprintfFunc()
 	commentTitleColor   = color.New(color.BgBlue).SprintfFunc()
@@ -94,8 +93,8 @@ func getFormattedInternComments(url string) (formattedComments string, totalBay 
 
 		width, _ := comment.Find(".ind img").Attr("width")
 		if width == "0" {
-			innerP := comment.Find(".default > .comment > span > p")
-			rawText := comment.Find(".default > .comment > span").Eq(0).Text()
+			innerP := comment.Find(".default > .comment > .commtext > p")
+			rawText := comment.Find(".default > .comment > .commtext").Eq(0).Text()
 
 			firstLine := rawText[:strings.Index(rawText, innerP.Eq(0).Text())]
 
